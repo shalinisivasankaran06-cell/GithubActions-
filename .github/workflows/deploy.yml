@@ -1,0 +1,24 @@
+name: CD - Deploy to EC2
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Push Docker Image"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Pull latest Docker image
+        run: docker pull shalinisivasankaran/randomqoutes:latest
+
+      - name: Stop and remove existing container (if running)
+        run: |
+          docker stop randomqoutes || true
+          docker rm randomqoutes || true
+
+      - name: Run new container
+        run: docker run -d --name randomqoutes -p 8000:8000 shalinisivasankaran/randomqoutes:latest
